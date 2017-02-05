@@ -59,7 +59,7 @@ OneWire ds(A0);  //the oneWire data pin  -- change as needed
 byte addr[8]; //sensor address on onewire bus
 byte readings[RBUFFER_LEN]; // storage for readings
 byte head = 0;  //next place to store a reading (better code possible)
-byte payload[PAYLOAD_LEN]; // this will eventually be renamed to mydata[], the actual payload
+byte payload[PAYLOAD_LEN]; // the actual payload
 
 //FUNCTIONS FOR OPERATION
 
@@ -84,19 +84,20 @@ byte readTemp(void) {      //for DS18B20
   byte present = 0;
   byte output, celsius4;
   
-  if (!ds.reset()) return 243;  //code for not present
+  if (!ds.reset()) return 243;  // code for not present
   ds.select(addr);
   ds.write(0x44, 1);        // start conversion, with parasite power on at the end -- should avoid current drain through 4.7k resistor
   delay(200);     // for 10 bit resolution  change this if resolution changes
 
-  present = ds.reset();  //not sure why this is needed, BUT it is
+  present = ds.reset();  // not sure why this is needed, BUT it is
   ds.select(addr);
   ds.write(0xBE);         // Read Scratchpad
 
-  //keep for future debugging
+  // keep for future debugging
  /* Serial.print("  Data = ");
   Serial.print(present, HEX);
-  Serial.print(" ");*/
+  Serial.print(" ");
+  */
   
   for ( i = 0; i < 9; i++) {           // we need 9 bytes
     data[i] = ds.read();
@@ -109,12 +110,12 @@ byte readTemp(void) {      //for DS18B20
  /* Serial.print(" CRC=");
   Serial.print(OneWire::crc8(data, 8), HEX);
   Serial.println();
-   */
+  */
 
   if (OneWire::crc8(addr, 7) != addr[7]) {
     Serial.println("CRC is not valid!");
     return 244;
-  }  //code for bad CRC
+  }  // code for bad CRC
 
   // Convert the data to actual temperature
   // because the result is a 16 bit signed integer, it should
@@ -122,7 +123,7 @@ byte readTemp(void) {      //for DS18B20
   // even when compiled on a 32 bit processor.
   
   int16_t raw = (data[1] << 8) | data[0];
-  //left in in case resolution changes -- BUT change to delay must be made manually
+  // left in in case resolution changes -- BUT change to delay must be made manually
   byte cfg = (data[4] & 0x60);
   // at lower res, the low bits are undefined, so let's zero them
   if (cfg == 0x00) raw = raw & ~7;  // 9 bit resolution, 93.75 ms
@@ -131,11 +132,11 @@ byte readTemp(void) {      //for DS18B20
   ////  sensor default is 12 bit resolution, 750 ms conversion time
   
   //Serial.println(raw);
-  raw = raw + 160;  //add 10 degrees celsius to shift -10 to +50 range to 0 to 60
-  if (raw < 0) return 241;  //code for below -10 deg celsius
-  if (raw > 960) return 242; //code for above 50 deg celsius (960 = 16*60 --max temperature)
+  raw = raw + 160;  // add 10 degrees celsius to shift -10 to +50 range to 0 to 60
+  if (raw < 0) return 241;  // code for below -10 deg celsius
+  if (raw > 960) return 242; // code for above 50 deg celsius (960 = 16*60 --max temperature)
   celsius4 = raw / 4; // in units of 1/4 degree
-  return celsius4;  //error codes returned earlier
+  return celsius4;  // error codes returned earlier
 }
 
 
@@ -157,12 +158,12 @@ void dataToBuffer (byte newdata) {   // for data from any sensor or other source
     // insert battery condition byte here -- payload[PAYLOAD_LEN 1 1] = batt cond  last byte
 }
 
-//FUNCTIONS USEFUL FOR DEBUGGING
+// FUNCTIONS USEFUL FOR DEBUGGING
 
 float decodeTempC(byte c4) { // input is celsius
   float output;
   float input = c4;
-  if (c4 <= 240) output =  (float(input / 4) - 10); //temperature in range
+  if (c4 <= 240) output =  (float(input / 4) - 10); // temperature in range
   if (c4 == 241) {
     Serial.println("below range");
     output =  255;
@@ -186,10 +187,10 @@ float decodeTempC(byte c4) { // input is celsius
   return output;
 }
 
-float decodeTempF(byte c4) { //input is farenheight
+float decodeTempF(byte c4) { // input is farenheight
   float output;
   float input = c4;
-  if (c4 <= 240) output =  (((input / 4) - 10) * 1.8 + 32); //temperature in range
+  if (c4 <= 240) output =  (((input / 4) - 10) * 1.8 + 32); // temperature in range
   if (c4 == 241) {
     Serial.println("below range");
     output =  255;
@@ -213,8 +214,6 @@ float decodeTempF(byte c4) { //input is farenheight
   return output;
 }
 
-
-static uint8_t mydata[] = "Hello, world!";
 static osjob_t sendjob;
 
 // Schedule TX every this many seconds (might become longer due to duty
@@ -300,7 +299,7 @@ void do_send(osjob_t* j){
         Serial.println(F("OP_TXRXPEND, not sending"));
     } else {
         // Prepare upstream data transmission at the next possible time.
-        LMIC_setTxData2(1, mydata, sizeof(mydata)-1, 0);
+        LMIC_setTxData2(1, payload, sizeof(payload)-1, 0);
         Serial.println(F("Packet queued"));
     }
     // Next TX is scheduled after TX_COMPLETE event.
@@ -313,7 +312,7 @@ void setup() {
     pinMode(DS_POWER_PIN, OUTPUT);
     digitalWrite(DS_POWER_PIN, HIGH); // turn on power to DS18B20
     
-    //for 18B20
+    // for 18B20
     ds.search(addr);
     set_resolution();
   
@@ -398,13 +397,13 @@ void loop() {
   
     currentTemp = readTemp();
     Serial.println(readTemp());
-    Serial.println(decodeTempC(currentTemp));   //for debugging- returns degrees  celsius as a float
-    Serial.println(decodeTempF(currentTemp));  //for debugging- returns degrees  farenheight as a float
+    Serial.println(decodeTempC(currentTemp));   // for debugging- returns degrees  celsius as a float
+    Serial.println(decodeTempF(currentTemp));  // for debugging- returns degrees  farenheight as a float
     
-    //put recent readings into a buffer with most recent data first
-    dataToBuffer (currentTemp); //adds data to buffer and payload
+    // put recent readings into a buffer with most recent data first
+    dataToBuffer (currentTemp); // adds data to buffer and payload
  
-    //print payload for debugging
+    // print payload for debugging
     Serial.println(currentTemp);
     Serial.print("Payload    ");
     for (byte i = 0 ; i < PAYLOAD_LEN  ; i++){
