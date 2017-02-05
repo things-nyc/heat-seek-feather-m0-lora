@@ -10,9 +10,13 @@
 
 ### Hardware
 
-DS18B20 Temperature sensor - [Datasheet](http://datasheets.maximintegrated.com/en/ds/DS18B20.pdf)
+[DS18B20 Temperature sensor](http://www.digikey.com/product-detail/en/maxim-integrated/DS18B20/DS18B20-ND/420071) - [Datasheet](http://datasheets.maximintegrated.com/en/ds/DS18B20.pdf)
 
 [Adafruit Feather M0 LoRa RF95](https://www.adafruit.com/product/3178)
+
+4.7K ohm resistor
+
+~ 3 inches of solid copper wire for LoRa antenna
 
 ## Photos!
 
@@ -22,4 +26,4 @@ DS18B20 Temperature sensor - [Datasheet](http://datasheets.maximintegrated.com/e
 
 ![Sensor Plugged Into M0](/images/connected-m0-sensor.jpg)
 
-![TTN Payload Function](/images/payload-function.jpg)
+![TTN Payload Function](/images/payload-function.png)
